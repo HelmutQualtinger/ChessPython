@@ -1,7 +1,13 @@
+# pylint: disable=too-many-public-methods
+"""
+Test the Chessboard class.
+"""
 import unittest
 from chessboard import Chessboard, PieceType, Color, Piece
 
 class TestChessboard(unittest.TestCase):
+    """Test the Chessboard class.
+    """
     def setUp(self):
         """Set up a fresh chessboard for each test."""
         self.board = Chessboard()
@@ -101,7 +107,8 @@ class TestChessboard(unittest.TestCase):
     def test_queen_movement(self):
         """Test queen movement."""
         # Move pawn to make space for queen
-        self.board.move_piece(6, 3, 4, 3)
+        self.board.move_piece(6, 4, 4, 4)
+        print("Hallo----\n",self.board)
         
         # Move queen diagonally
         self.assertTrue(self.board.move_piece(7, 3, 5, 5))
@@ -158,6 +165,118 @@ class TestChessboard(unittest.TestCase):
         # No moves for blocked bishop
         moves = self.board.get_possible_moves(7, 2)  # c1 bishop
         self.assertEqual(len(moves), 0)  # Can't move (blocked)
+
+    def test_king_movement(self):
+        """Test king movement."""
+        # Move pawn to make space for king
+        self.board.move_piece(6, 4, 4, 4)
+        
+        # Move king one square
+        self.assertTrue(self.board.move_piece(7, 4, 6, 4))
+        self.assertEqual(self.board.get_piece(6, 4).piece_type, PieceType.KING)
+        
+        # Move king diagonally
+        self.assertTrue(self.board.move_piece(6, 4, 5, 5))
+        self.assertEqual(self.board.get_piece(5, 5).piece_type, PieceType.KING)
+        
+        # Try invalid king move (more than one square)
+        self.assertFalse(self.board.move_piece(5, 5, 3, 5))
+
+    def test_pawn_double_move(self):
+        """Test pawn's ability to move two squares from starting position."""
+        # Double move from starting position
+        self.assertTrue(self.board.move_piece(6, 0, 4, 0))
+        self.assertEqual(self.board.get_piece(4, 0).piece_type, PieceType.PAWN)
+        
+        # Try double move from non-starting position (should fail)
+        self.assertFalse(self.board.move_piece(4, 0, 2, 0))
+
+    def test_pawn_promotion(self):
+        """Test pawn promotion."""
+        # Setup: Move a white pawn to the seventh rank
+        board = Chessboard()
+        # Replace a black piece with a white pawn
+        board.board[1][0] = Piece(PieceType.PAWN, Color.WHITE, 1, 0)
+        
+        # Move to promotion square
+        self.assertTrue(board.move_piece(1, 0, 0, 0))
+        
+        # Check if pawn was promoted to queen
+        self.assertEqual(board.get_piece(0, 0).piece_type, PieceType.QUEEN)
+        self.assertEqual(board.get_piece(0, 0).color, Color.WHITE)
+
+    def test_capture_own_piece(self):
+        """Test that a piece can't capture a piece of the same color."""
+        # Try to move white knight to a square occupied by white pawn
+        self.assertFalse(self.board.is_valid(7, 1, 6, 3))
+
+    def test_empty_square_selection(self):
+        """Test selecting an empty square."""
+        # Try to get moves for an empty square
+        moves = self.board.get_possible_moves(4, 4)
+        self.assertEqual(len(moves), 0)
+
+    def test_out_of_bounds_moves(self):
+        """Test that moves outside the board are invalid."""
+        # Setup a piece at the edge
+        self.board.move_piece(6, 0, 0, 0)  # White pawn to a8
+        
+        # Try to move outside board boundaries
+        self.assertFalse(self.board.is_valid(0, 0, -1, 0))
+        self.assertFalse(self.board.is_valid(0, 0, 0, -1))
+    
+    def test_direction_generation(self):
+        """Test that movement directions are generated correctly for pieces."""
+        # Knight directions
+        moves = self.board.get_possible_moves(7, 1)  # b1 knight
+        self.assertEqual(len(moves), 2)  # Only specific moves are legal
+        
+        # Setup a queen in the center
+        empty_board = Chessboard()
+        empty_board.board = [[Piece(PieceType.EMPTY, Color.NONE, r, c) for c in range(8)] for r in range(8)]
+        empty_board.board[3][3] = Piece(PieceType.QUEEN, Color.WHITE, 3, 3)
+        
+        # Queen should have moves in 8 directions
+        moves = empty_board.get_possible_moves(3, 3)
+        # Queen should be able to access majority of the board from center
+        self.assertTrue(len(moves) > 20) 
+
+    def test_fen_string_generation(self):
+        """Test generating FEN string from board position."""
+        # Starting position FEN
+        expected_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+        self.assertEqual(self.board.to_fen().split(" ")[0], expected_fen)
+        
+        # Move a piece and check FEN
+        self.board.move_piece(6, 4, 4, 4)  # e2 to e4
+        expected_fen_after_move = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR"
+        self.assertEqual(self.board.to_fen().split(" ")[0], expected_fen_after_move)
+
+    def test_load_from_fen(self):
+        """Test loading board from FEN string."""
+        # Custom position FEN
+        fen = "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R"
+        board = Chessboard.from_fen(fen)
+        
+        # Verify pieces are in the correct positions
+        self.assertEqual(board.get_piece(4, 4).piece_type, PieceType.PAWN)
+        self.assertEqual(board.get_piece(4, 4).color, Color.WHITE)
+        self.assertEqual(board.get_piece(2, 2).piece_type, PieceType.PAWN)
+        self.assertEqual(board.get_piece(2, 2).color, Color.BLACK)
+        self.assertEqual(board.get_piece(5, 5).piece_type, PieceType.NIGHT)
+        self.assertEqual(board.get_piece(5, 5).color, Color.WHITE)
+
+    def test_copy_board(self):
+        """Test board copying."""
+        # Create a copy of the board
+        board_copy = self.board.copy()
+        
+        # Modify original board
+        self.board.move_piece(6, 0, 4, 0)
+        
+        # Copy shouldn't be affected
+        self.assertEqual(board_copy.get_piece(6, 0).piece_type, PieceType.PAWN)
+        self.assertEqual(board_copy.get_piece(4, 0).piece_type, PieceType.EMPTY)
 
 if __name__ == '__main__':
     unittest.main()
