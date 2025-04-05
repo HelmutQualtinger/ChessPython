@@ -1,18 +1,29 @@
-# This script defines a chessboard and its pieces, along with their movements and rules.
-
+"""This script defines a chessboard and its pieces, along with their movements and rules.
+It provides methods to initialize the board, check for valid moves, and evaluate the board state.
+"""
 import enum
 from dataclasses import dataclass
 import tkinter as tk
-from PIL import Image, ImageTk
+# from PIL import Image, ImageTk
 
 # Enum for the color of the chess pieces
 class Color(enum.Enum):
+    """
+    Represents the color of a chess piece.
+    Attributes:
+        value (int): The numerical value of the color
+    """
     NONE = 0  # No color (empty square)
     WHITE = 1  # White pieces
     BLACK = 2  # Black pieces
 
 # Enum for the type of chess pieces
 class PieceType(enum.Enum):
+    """
+    Represents the type of a chess piece.
+    Attributes:
+        value (int): The numerical value of the piece type
+    """
     EMPTY = 0  # Empty square
     PAWN = 1  # Pawn
     ROOK = 2  # Rook
@@ -65,10 +76,13 @@ class Chessboard:
         chessboard.evaluate_board()  # Evaluate the board score
     Example:
     """
+    # Klassenattribut für piece_values
+    piece_values = {piece_type: score 
+                   for piece_type, score in zip(PieceType, [0, 1, 5, 3, 3, 9, 100])}
+
     def __init__(self):
         # Initialize an 8x8 board with empty pieces
-        self.board = [[Piece(PieceType.EMPTY, Color.NONE) for _ in range(8)] for _ in range(8)]
-        # Dictionary to track the count of each piece type for both colors
+        self.board = [[Piece(PieceType.EMPTY, Color.NONE,row,col) for row in range(8)] for col in range(8)]
         self.initialize_board()  # Set up the initial board configuration
 
     # Method to initialize the board with the standard chess setup
@@ -80,16 +94,16 @@ class Chessboard:
         for color in {Color.WHITE, Color.BLACK}:
             fl = 7 if color == Color.WHITE else 0 
             pl = 6 if color == Color.WHITE else 1
-            self.board[fl][0] = Piece(PieceType.ROOK, color)
-            self.board[fl][1] = Piece(PieceType.NIGHT, color)
-            self.board[fl][2] = Piece(PieceType.BISHOP, color)
-            self.board[fl][3] = Piece(PieceType.QUEEN, color)
-            self.board[fl][4] = Piece(PieceType.KING, color)
-            self.board[fl][5] = Piece(PieceType.BISHOP, color)
-            self.board[fl][6] = Piece(PieceType.NIGHT, color)
-            self.board[fl][7] = Piece(PieceType.ROOK, color)
+            self.board[fl][0] = Piece(PieceType.ROOK, color,row=fl, col=0)
+            self.board[fl][1] = Piece(PieceType.NIGHT, color,row=fl, col=1)
+            self.board[fl][2] = Piece(PieceType.BISHOP, color,row=fl, col=2)
+            self.board[fl][3] = Piece(PieceType.QUEEN, color,row=fl, col=3)
+            self.board[fl][4] = Piece(PieceType.KING, color,row=fl, col=4)
+            self.board[fl][5] = Piece(PieceType.BISHOP, color,row=fl, col=5)
+            self.board[fl][6] = Piece(PieceType.NIGHT, color,row=fl, col=6)
+            self.board[fl][7] = Piece(PieceType.ROOK, color,row=fl, col=7)
             for i in range(8):
-                self.board[pl][i] = Piece(PieceType.PAWN, color)
+                self.board[pl][i] = Piece(PieceType.PAWN, color,row=pl, col=i)
 
     # Method to get the piece at a specific position on the board
     def get_piece(self, row, col):
@@ -246,22 +260,23 @@ class Chessboard:
 
         # Define possible directions based on piece type
         directions = []
-        
-        if piece.piece_type == PieceType.PAWN:
-            directions = [(-2,0),(-1, 0), (-1, -1), (-1, 1)] if piece.color == Color.WHITE else [(2,0),(1, 0), (1, -1), (1, 1)]
-        elif piece.piece_type == PieceType.NIGHT:
-            directions = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
-        elif piece.piece_type == PieceType.BISHOP:
-            directions = [(i, i) for i in range(-7, 8)] + [(i, -i) for i in range(-7, 8)]
-        elif piece.piece_type == PieceType.ROOK:
-            directions = [(i, 0) for i in range(-7, 8)] + [(0, i) for i in range(-7, 8)]
-        elif piece.piece_type == PieceType.QUEEN:
-            directions = [(i, i) for i in range(-7, 8)] + [(i, -i) for i in range(-7, 8)] + \
-                 [(i, 0) for i in range(-7, 8)] + [(0, i) for i in range(-7, 8)]
-        elif piece.piece_type == PieceType.KING:
-            directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        match piece.piece_type:
+            case PieceType.PAWN:
+                directions = [(-2, 0), (-1, 0), (-1, -1), (-1, 1)] if piece.color == Color.WHITE else [(2, 0), (1, 0), (1, -1), (1, 1)]
+            case PieceType.NIGHT:
+                directions = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
+            case PieceType.BISHOP:
+                # Nur die vier diagonalen Grundrichtungen
+                directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+            case PieceType.ROOK:
+                # Nur die vier orthogonalen Grundrichtungen
+                directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+            case PieceType.QUEEN:
+                # Alle acht Grundrichtungen
+                directions = [(1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)]
+            case PieceType.KING:
+                directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
-        # Iterate over possible directions
         for direction in directions:
             end_row, end_col = start_row + direction[0], start_col + direction[1]
             while 0 <= end_row < 8 and 0 <= end_col < 8:
@@ -286,13 +301,10 @@ class Chessboard:
         Returns:
             int: The total score of the board.
         """
-
-        piece_values = {piece_type: score 
-                        for piece_type, score in zip(PieceType, [0, 1, 5, 3, 3, 9, 100])}   
-        # Sum up piece values over both dimensions of the board
+        # Sum up piece values over both dimensions of the board using class attribute
         total_score = sum(
-            piece_values[piece.piece_type] if piece.color == Color.WHITE else -piece_values[piece.piece_type]
-            for row in self.board for piece in row 
+            Chessboard.piece_values[piece.piece_type] if piece.color == Color.WHITE else -Chessboard.piece_values[piece.piece_type]
+            for row in self.board for piece in row
         )
         return total_score
 
@@ -304,14 +316,11 @@ class Chessboard:
         # Create the main window
         root = tk.Tk()
         root.title("Chess Board")
-        
         # Create a frame for the board
         board_frame = tk.Frame(root)
-        board_frame.pack(padx=10, pady=10)
-        
+        board_frame.pack(padx=10, pady=10)        
         # Define colors for the squares
-        colors = ["darkgrey", "gray"]
-        
+        colors = ["darkgrey", "gray"]       
         # Dictionary to map pieces to unicode chess symbols
         piece_symbols = {
             (PieceType.KING, Color.WHITE): "♔",
@@ -326,17 +335,16 @@ class Chessboard:
             (PieceType.BISHOP, Color.BLACK): "♝",
             (PieceType.NIGHT, Color.BLACK): "♞",
             (PieceType.PAWN, Color.BLACK): "♟"
-        }
-        
+        }      
         # Update the font to use Pecita
         font_style = ("Pecita", 70)  # Change font to Pecita with size 40
-        
+
         # Create the squares and place pieces
         for row in range(8):
             for col in range(8):
                 # Calculate square color
                 color = colors[(row + col) % 2]
-                
+              
                 # Create square
                 square = tk.Frame(
                     board_frame,
@@ -376,10 +384,68 @@ class Chessboard:
                 text=str(8 - row)
             ).grid(row=row, column=8)
         
-        root.mainloop()
-  
+        root.mainloop() 
+        
+    def get_move_from_keyboard(self):
+        """
+        Get a move from keyboard input in chess notation (e.g., 'e2e4').
+        Returns tuple of (start_row, start_col, end_row, end_col) or None if invalid.
+        """
+        while True:
+            try:
+                move = input("Enter move (e.g. e2e4): ").lower().strip()
+                if len(move) != 4:
+                    print("Invalid format. Use e.g. 'e2e4'")
+                    continue
+                
+                start_col = ord(move[0]) - ord('a')
+                start_row = 8 - int(move[1])
+                end_col = ord(move[2]) - ord('a')
+                end_row = 8 - int(move[3])
+            
+                if not (0 <= start_row < 8 and 0 <= start_col < 8 and 
+                        0 <= end_row < 8 and 0 <= end_col < 8):
+                    print("Move is outside the board")
+                    continue
+                
+                if self.is_valid(start_row, start_col, end_row, end_col):
+                    return (start_row, start_col, end_row, end_col)
+                else:
+                    print("Invalid move")
+                continue
+            
+            except (ValueError, IndexError):
+                print("Invalid input format")
+                continue
+    def move_piece(self, start_row, start_col, end_row, end_col):
+        """
+        Move a piece from the starting position to the ending position.
+        """
+        piece = self.get_piece(start_row, start_col)
+        if self.is_valid(start_row, start_col, end_row, end_col):
+            self.board[end_row][end_col] = piece
+            self.board[start_row][start_col] = Piece(PieceType.EMPTY, Color.NONE)
+            piece.row = end_row
+            piece.col = end_col
+            return True
+        return False
+            
 if __name__ == "__main__":
     board = Chessboard()
+    print(board)  # Print the initial board configuration
+    
+    start_row, start_col,end_row,end_col= board.get_move_from_keyboard()
+    board.move_piece(start_row, start_col, end_row, end_col)  # Move the piece
+    # Get list of all white pieces$e2
+    white_pieces = [piece for row in board.board for piece in row if piece.color == Color.WHITE]
+    move_count = 0
+    for piece in white_pieces:
+        print( piece.color.name, piece.piece_type.name)
+        moves = board.get_possible_moves(piece.row, piece.col)  # Get possible moves for the current piece
+        print(moves)
+        move_count += len(moves)
+    print(f"Number of white pieces: {len(white_pieces)} Total possible moves: {move_count}")
+    print(board.evaluate_board())  # Evaluate the board score
     board.display_board_tk()
 
 
