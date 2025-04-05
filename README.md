@@ -1,6 +1,7 @@
 # ChessPython
-![Chess Board](board.png)
-
+<div style="float: right; margin: 10px;">
+   <img src="board.png" alt="Chess Board" width="300">
+</div>
 The chessboard is represented visually in the image above. This image provides a clear view of the initial setup of the chess pieces, allowing players to easily understand the game state and the positions of each piece. The graphical representation enhances the user experience by providing a familiar layout for chess enthusiasts, making it easier to follow the game's progress and strategize their moves.
 
 ChessPython is a simple chess game implemented in Python. It defines a chessboard, its pieces, and the rules governing their movements. The game can be played in a graphical interface using Tkinter.
