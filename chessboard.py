@@ -2,6 +2,8 @@
 
 import enum
 from dataclasses import dataclass
+import tkinter as tk
+from PIL import Image, ImageTk
 
 # Enum for the color of the chess pieces
 class Color(enum.Enum):
@@ -22,6 +24,14 @@ class PieceType(enum.Enum):
 # Class representing a chess piece
 @dataclass
 class Piece:
+    """
+    Represents a chess piece on the board.
+    Attributes:
+        piece_type (PieceType): The type of the piece (e.g., PAWN, ROOK)
+        color (Color): The color of the piece (e.g., WHITE, BLACK)
+        row (int): The row position on the board
+        col (int): The column position on the board
+    """
     piece_type: PieceType  # Type of the piece (e.g., PAWN, ROOK)
     color: Color  # Color of the piece (e.g., WHITE, BLACK)
     row: int = -1  # Row position on the board
@@ -130,13 +140,15 @@ class Chessboard:
             # White pawn movement
             if piece.color == Color.WHITE:
                 if (start_col == end_col and start_row - end_row == 1 and end_piece.piece_type == PieceType.EMPTY) or \
-                   (start_col == end_col and start_row == 6 and end_row == 4 and end_piece.piece_type == PieceType.EMPTY and self.get_piece(5, start_col).piece_type == PieceType.EMPTY) or \
+                   (start_col == end_col and start_row == 6 and end_row == 4 and end_piece.piece_type == PieceType.EMPTY and \
+                    self.get_piece(5, start_col).piece_type == PieceType.EMPTY) or \
                    (abs(start_col - end_col) == 1 and start_row - end_row == 1 and end_piece.color == Color.BLACK):
                     return True
             # Black pawn movement
             elif piece.color == Color.BLACK:
                 if (start_col == end_col and end_row - start_row == 1 and end_piece.piece_type == PieceType.EMPTY) or \
-                   (start_col == end_col and start_row == 1 and end_row == 3 and end_piece.piece_type == PieceType.EMPTY and self.get_piece(2, start_col).piece_type == PieceType.EMPTY) or \
+                   (start_col == end_col and start_row == 1 and end_row == 3 and end_piece.piece_type == PieceType.EMPTY \
+                    and self.get_piece(2, start_col).piece_type == PieceType.EMPTY) or \
                    (abs(start_col - end_col) == 1 and end_row - start_row == 1 and end_piece.color == Color.WHITE):
                     return True
             return False
@@ -283,29 +295,88 @@ class Chessboard:
             for row in self.board for piece in row 
         )
         return total_score
+
+    def display_board_tk(self):
+        """
+        Display the chess board using Tkinter.
+        Creates a window with a graphical representation of the current board state.
+        """
+        # Create the main window
+        root = tk.Tk()
+        root.title("Chess Board")
+        
+        # Create a frame for the board
+        board_frame = tk.Frame(root)
+        board_frame.pack(padx=10, pady=10)
+        
+        # Define colors for the squares
+        colors = ["darkgrey", "gray"]
+        
+        # Dictionary to map pieces to unicode chess symbols
+        piece_symbols = {
+            (PieceType.KING, Color.WHITE): "♔",
+            (PieceType.QUEEN, Color.WHITE): "♕",
+            (PieceType.ROOK, Color.WHITE): "♖",
+            (PieceType.BISHOP, Color.WHITE): "♗",
+            (PieceType.NIGHT, Color.WHITE): "♘",
+            (PieceType.PAWN, Color.WHITE): "♙",
+            (PieceType.KING, Color.BLACK): "♚",
+            (PieceType.QUEEN, Color.BLACK): "♛",
+            (PieceType.ROOK, Color.BLACK): "♜",
+            (PieceType.BISHOP, Color.BLACK): "♝",
+            (PieceType.NIGHT, Color.BLACK): "♞",
+            (PieceType.PAWN, Color.BLACK): "♟"
+        }
+        
+        # Create the squares and place pieces
+        for row in range(8):
+            for col in range(8):
+                # Calculate square color
+                color = colors[(row + col) % 2]
+                
+                # Create square
+                square = tk.Frame(
+                    board_frame,
+                    width=60,
+                    height=60,
+                    bg=color
+                )
+                square.grid(row=row, column=col)
+                square.pack_propagate(False)
+                
+                # Get piece at current position
+                piece = self.get_piece(row, col)
+                
+                # If square is not empty, place piece symbol
+                if piece.piece_type != PieceType.EMPTY:
+                    piece_symbol = piece_symbols.get((piece.piece_type, piece.color), "")
+                    label = tk.Label(
+                        square,
+                        text=piece_symbol,
+                        font=("Arial", 40),
+                        bg=color,
+                        fg="black" if piece.color == Color.BLACK else "white"
+                    )
+                    label.pack(expand=True)
+        
+        # Add column labels (a-h)
+        for col in range(8):
+            tk.Label(
+                board_frame,
+                text=chr(97 + col)
+            ).grid(row=8, column=col)
+        
+        # Add row labels (1-8)
+        for row in range(8):
+            tk.Label(
+                board_frame,
+                text=str(8 - row)
+            ).grid(row=row, column=8)
+        
+        root.mainloop()
   
 if __name__ == "__main__":
-    new_board = Chessboard()
-    print(new_board)  # Print the initial board configuration
-    # Get a list of all pieces of color white
-    white_pieces = filter(lambda p: p[0].color == Color.BLACK, 
-                               [(piece, row, col) for row, row_pieces in enumerate(new_board.board) 
-                                for col, piece in enumerate(row_pieces)])
+    board = Chessboard()
+    board.display_board_tk()
 
-    print("White pieces:", white_pieces)
-    
-    moves = 1
-    for piece in white_pieces:
-        piece, row, col = piece
-        print(f"Possible moves for {piece.color.name} {piece.piece_type.name} at ({row}, {col}):")
-        
-        all_moves = new_board.get_possible_moves(row, col)  # Get possible moves for the white rook at (6, 0)
-        for move in all_moves:
-            print(moves,":",move)
-            moves += 1
-            
-    print(f"Total moves: {moves}")
-    
-    print ("Total score of the board:", new_board.evaluate_board())  # Evaluate the board score
-    
 
