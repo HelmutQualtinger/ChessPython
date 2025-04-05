@@ -337,7 +337,7 @@ class Chessboard:
             (PieceType.PAWN, Color.BLACK): "♟"
         }      
         # Update the font to use Pecita
-        font_style = ("Pecita", 70)  # Change font to Pecita with size 40
+        font_style = ("Arial", 70)  # Change font to Pecita with size 40
 
         # Create the squares and place pieces
         for row in range(8):

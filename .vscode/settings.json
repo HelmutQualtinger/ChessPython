@@ -3,6 +3,8 @@
         "darkgrey",
         "padx",
         "pady",
-        "Pecita"
+        "Pecita",
+        "RNBQKB",
+        "rnbqkbnr"
     ]
 }
